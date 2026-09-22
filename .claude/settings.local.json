@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./venv/Scripts/python.exe -c \"import streamlit; print\\(streamlit.__version__\\)\")",
+      "Bash(./venv/Scripts/python.exe -c ' *)"
+    ]
+  }
+}

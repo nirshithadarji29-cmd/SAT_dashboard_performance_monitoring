@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# Secrets / local config
+.env
+.env.*
+secrets.toml
+.streamlit/secrets.toml
+
+# Local data (SAT reports come from OneDrive, never commit them)
+*.xlsx
+~$*
+data/
+
+# OS
+.DS_Store
+Thumbs.db
