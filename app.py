@@ -17,7 +17,7 @@ from config.settings import (
     DATA_CACHE_TTL,
     PANEL_DARK,
 )
-from scripts.loaders.read_onedrive import (
+from scripts.loaders.read_s3 import (
     describe_data_problem,
     get_sat_root,
     load_all_data,
