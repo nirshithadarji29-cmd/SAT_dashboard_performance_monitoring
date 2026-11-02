@@ -1,0 +1,14 @@
+# The app paints itself dark (assets/style.css, and BG_DARK / PANEL_DARK in
+# config/settings.py drive the charts), and style.css forces white text on
+# every label. The theme must agree: with base="light", Streamlit painted its
+# own widget surfaces - multi-select chips, dropdown menus - white, leaving
+# white text on white.
+#
+# backgroundColor and secondaryBackgroundColor are BG_DARK and PANEL_DARK.
+[theme]
+base="dark"
+primaryColor="#2F80ED"
+backgroundColor="#081A2F"
+secondaryBackgroundColor="#102943"
+textColor="#FFFFFF"
+font="sans serif"

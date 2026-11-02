@@ -1,0 +1,1012 @@
+/* ==========================================================================
+   SAT Intelligence Platform
+
+   One idea runs through this file: the page is an instrument reading against
+   a threshold, so the 85% target is the recurring motif and figures are set
+   in tabular numerals that line up in a column.
+
+   Three things it deliberately does NOT do, because they were what made the
+   page read as a template:
+     - six identical cards with six unrelated accent colours,
+     - a heading emoji on every section,
+     - one flat white for every word on the page.
+   ========================================================================== */
+
+:root{
+    /* Surfaces: one family, three depths. */
+    --ground:#081A2F;
+    --panel:#102943;
+    --raised:#16324F;
+    --line:rgba(255,255,255,.10);
+    --line-strong:rgba(255,255,255,.20);
+
+    /* Ink, in three levels. The page previously forced pure white on every
+       element with !important, so a caption shouted as loudly as a headline
+       and no hierarchy was possible. */
+    --ink:#FFFFFF;
+    --ink-2:#A9BFD6;
+    --ink-3:#7E93AB;
+
+    --accent:#2F80ED;
+    --accent-deep:#134074;
+
+    /* Status. Lighter than the chart status reds because this is text: the
+       chart step measures 3.1:1 on --panel, fine for a mark, too low to
+       read. Every use ships with an arrow and a wording. */
+    --good:#16C216;
+    --warn:#FFC46B;
+    --bad:#FF6B6B;
+
+    /* Type scale, 1.25 from a 14px base. */
+    --t-caption:12px;
+    --t-body:14px;
+    --t-lead:17px;
+    --t-h3:22px;
+    --t-h2:27px;
+
+    /* One spacing scale. The page had four unrelated ones. */
+    --space-1:8px;
+    --space-2:16px;
+    --space-3:24px;
+    --space-4:40px;
+
+    --radius:14px;
+    --radius-sm:10px;
+
+    /* Segoe UI Variable ships with Windows 11 and is a genuinely better
+       text face than the Streamlit default; the rest of the stack covers
+       everything else. No webfont, so nothing depends on the network. */
+    --font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,
+           "Helvetica Neue",sans-serif;
+}
+
+
+/* ============================= */
+/* PAGE                          */
+/* ============================= */
+
+.stApp{
+    background:var(--ground);
+    /* Inherited rather than forced. Anything that needs to be quieter can
+       now say so, which is what the !important version made impossible. */
+    color:var(--ink);
+    font-family:var(--font);
+}
+
+/* Everything EXCEPT icons and code. Streamlit draws its chevrons and
+   toggles with the Material Symbols icon font, where the glyph is the
+   element's own text - the expander arrow is literally the word
+   "keyboard_arrow_down". A blanket font-family rule replaces that font, so
+   the ligature name renders as words spilling over the label beside it.
+   Code spans lose their monospace the same way. */
+.stApp *:not([data-testid="stIconMaterial"]):not(code):not(pre):not(kbd):not(samp){
+    font-family:var(--font);
+}
+
+/* Second line of defence: whatever else reaches these, the icon font wins. */
+[data-testid="stIconMaterial"],
+span[class*="material-symbols"]{
+    font-family:"Material Symbols Rounded" !important;
+}
+
+code, pre, kbd, samp,
+[data-testid="stCode"] *{
+    font-family:ui-monospace,"Cascadia Mono","Consolas",monospace;
+}
+
+/* Hide Streamlit Menu */
+#MainMenu,
+footer,
+header{
+    visibility:hidden;
+}
+
+.block-container{
+    padding-top:1rem;
+    padding-left:2rem;
+    padding-right:2rem;
+    max-width:1600px;
+}
+
+/* Section headings sit at the page's left padding; every chart title used to
+   sit 20px further in, inside the figure's own margin. The figure titles are
+   gone now and this is the only heading level between sections. */
+h2, h3,
+[data-testid="stHeading"] h2,
+[data-testid="stHeading"] h3{
+    font-size:var(--t-h3);
+    font-weight:600;
+    letter-spacing:-.01em;
+    margin:var(--space-4) 0 var(--space-2);
+}
+
+/* Every figure on the page, so columns of numbers align on the decimal. */
+.stApp{
+    font-variant-numeric:tabular-nums;
+}
+
+
+/* ============================= */
+/* HEADER                        */
+/* ============================= */
+
+.header{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px 28px;
+    margin-bottom:var(--space-2);
+    /* Both header blocks are flex columns of the same min-height, so the
+       title card and the data-period card end level however the text wraps.
+       The 5:1 split used to leave the right card six lines tall. */
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-height:132px;
+}
+
+.header h1{
+    margin:0;
+    /* Was pinned at 40px, which crowded the card beside it on a laptop. */
+    font-size:clamp(24px,2.6vw,36px);
+    font-weight:600;
+    letter-spacing:-.02em;
+    line-height:1.1;
+}
+
+.header p{
+    color:var(--ink-2);
+    font-size:var(--t-body);
+    margin:10px 0 0;
+    line-height:1.45;
+}
+
+/* The right-hand card: what the reports cover. */
+.period-label{
+    color:var(--ink-3);
+    font-size:var(--t-caption);
+    margin:0 0 2px;
+}
+
+.period-value{
+    font-size:var(--t-h3);
+    font-weight:600;
+    margin:0;
+    line-height:1.15;
+}
+
+.period-detail{
+    color:var(--ink-2);
+    font-size:var(--t-caption);
+    margin:10px 0 0;
+    line-height:1.5;
+}
+
+
+/* ============================= */
+/* HEADLINE FIGURE               */
+/* ============================= */
+/* Accuracy against target is the one number the page exists to report, so it
+   is the only thing set large. The counts that used to sit in matching cards
+   beside it are inventory, not performance - they moved to the strip below. */
+
+/* The two cards are grid items, so both stretch to the height of the taller
+   one and their last lines land on the same baseline. As separate Streamlit
+   columns the short card stopped at its min-height while the hero grew. */
+.kpi-row{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:var(--space-2);
+    align-items:stretch;
+}
+
+@media (max-width:900px){
+    .kpi-row{ grid-template-columns:1fr; }
+}
+
+.hero,
+.stat{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px 26px;
+    min-height:186px;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+
+/* <summary> is the card's only in-flow child - the drill-down panel is
+   positioned out of flow - so it has to carry the distribution itself. */
+.stat-pop summary{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+
+.hero-value{
+    font-size:clamp(40px,4.6vw,64px);
+    font-weight:600;
+    line-height:1;
+    letter-spacing:-.03em;
+    display:block;
+}
+
+.hero-unit{
+    font-size:.44em;
+    font-weight:500;
+    color:var(--ink-2);
+    margin-left:2px;
+}
+
+.hero-label{
+    color:var(--ink-2);
+    font-size:var(--t-body);
+    margin:8px 0 0;
+}
+
+.hero-gap{
+    font-size:var(--t-lead);
+    margin:18px 0 10px;
+}
+
+/* The target motif: a filled bar with a tick where 85% falls. The bar starts
+   at zero because it encodes a length; the tick is what it is read against. */
+.meter{
+    position:relative;
+    height:8px;
+    border-radius:4px;
+    background:rgba(255,255,255,.09);
+    overflow:visible;
+}
+
+.meter-fill{
+    height:100%;
+    border-radius:4px;
+    background:var(--accent);
+}
+
+.meter-target{
+    position:absolute;
+    top:-4px;
+    bottom:-4px;
+    width:2px;
+    background:var(--ink);
+    opacity:.85;
+}
+
+.meter-scale{
+    display:flex;
+    justify-content:space-between;
+    color:var(--ink-3);
+    font-size:11px;
+    margin:6px 0 0;
+}
+
+/* ============================= */
+/* LENS BREAKDOWN                */
+/* ============================= */
+/* Small multiples under the headline meter: identical tiles differing only in
+   the thing being compared, each reading against the same 85% tick. Only one
+   business unit reports a lens, so the block is drawn or it is not - there is
+   no empty state. */
+
+.lens-strip{
+    margin-top:20px;
+    padding-top:16px;
+    /* A rule rather than a card inside a card: these are a breakdown of the
+       figure above, not a second reading beside it. */
+    border-top:1px solid var(--line);
+}
+
+.lens-strip-title{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:var(--space-1);
+    margin:0 0 12px;
+    color:var(--ink-2);
+    font-size:var(--t-caption);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.09em;
+}
+
+.lens-strip-title span{
+    color:var(--ink-3);
+    font-weight:400;
+    text-transform:none;
+    letter-spacing:0;
+}
+
+/* auto-fit, so three lenses spread the width of the card and a report that
+   starts carrying six wraps to a second row instead of squeezing every name
+   down to an ellipsis. */
+.lens-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(136px,1fr));
+    gap:10px;
+}
+
+.lens-card{
+    background:var(--raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    padding:12px 14px 13px;
+}
+
+.lens-name{
+    display:block;
+    color:var(--ink-2);
+    font-size:var(--t-caption);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.lens-value{
+    display:block;
+    font-size:23px;
+    font-weight:600;
+    line-height:1.15;
+    letter-spacing:-.02em;
+    margin-top:3px;
+}
+
+.lens-unit{
+    font-size:.55em;
+    font-weight:500;
+    color:var(--ink-2);
+    margin-left:1px;
+}
+
+/* The hero meter at a smaller size - same bar, same target tick, so the
+   comparison is read the same way. */
+.lens-meter{
+    position:relative;
+    height:5px;
+    border-radius:3px;
+    background:rgba(255,255,255,.09);
+    margin:11px 0 9px;
+}
+
+.lens-meter-fill{
+    height:100%;
+    border-radius:3px;
+    background:var(--accent);
+}
+
+.lens-meter-target{
+    position:absolute;
+    top:-3px;
+    bottom:-3px;
+    width:2px;
+    background:var(--ink);
+    opacity:.8;
+}
+
+.lens-foot{
+    display:block;
+    color:var(--ink-3);
+    font-size:11px;
+}
+
+
+.hero-move,
+.stat-note{
+    color:var(--ink-2);
+    font-size:var(--t-caption);
+    margin:14px 0 0;
+    /* Reserved on every card whether or not there is a movement line, so a
+       month with nothing to compare does not shorten the card. */
+    min-height:18px;
+}
+
+.up{ color:var(--good); font-weight:600; }
+.down{ color:var(--bad); font-weight:600; }
+.flat{ color:var(--ink-3); }
+
+
+/* ============================= */
+/* STATUS CARD                   */
+/* ============================= */
+
+.stat{
+    border-top:3px solid var(--bad);
+}
+
+/* The card's verdict as a chip: mark, colour and wording together, so the
+   colour is never the only thing carrying it. */
+.badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin:0 0 12px;
+    padding:4px 11px;
+    border:1px solid transparent;
+    border-radius:999px;
+    font-size:var(--t-caption);
+    font-weight:600;
+    line-height:1.5;
+}
+
+.badge-ok{
+    color:var(--good);
+    background:rgba(22,194,22,.12);
+    border-color:rgba(22,194,22,.30);
+}
+
+.badge-warn{
+    color:var(--warn);
+    background:rgba(255,196,107,.12);
+    border-color:rgba(255,196,107,.30);
+}
+
+.badge-bad{
+    color:var(--bad);
+    background:rgba(255,107,107,.12);
+    border-color:rgba(255,107,107,.30);
+}
+
+/* The worst few, on the card's face. Same row shape as the drill-down panel
+   below it, so opening the card reads as more of the same list rather than
+   as a different thing. */
+.stat-worst{
+    margin:16px 0 0;
+}
+
+.stat-worst-title{
+    margin:0 0 4px;
+    font-size:var(--t-caption);
+    color:var(--ink-3);
+}
+
+.stat-worst div{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:7px 0;
+    font-size:13px;
+    border-top:1px solid rgba(255,255,255,.07);
+}
+
+.stat-worst b{
+    font-weight:600;
+    color:var(--bad);
+}
+
+.stat-more{
+    margin:9px 0 0;
+    font-size:11px;
+    color:var(--ink-3);
+}
+
+.stat-value{
+    font-size:clamp(34px,3.4vw,48px);
+    font-weight:600;
+    line-height:1;
+    letter-spacing:-.02em;
+    display:block;
+}
+
+.stat-label{
+    color:var(--ink-2);
+    font-size:var(--t-body);
+    margin:8px 0 0;
+}
+
+.stat-ok{
+    border-top-color:var(--good);
+}
+
+/* Clickable card: <details>, so the drill-down needs no button and no rerun.
+   The lift on hover is kept only here - on all six cards it was decoration;
+   on the one card that opens it says the card is interactive. */
+.stat-pop{
+    position:relative;
+    cursor:pointer;
+    transition:transform .18s ease;
+}
+
+.stat-pop:hover{
+    transform:translateY(-3px);
+}
+
+.stat-pop summary{
+    list-style:none;
+    outline:none;
+}
+
+.stat-pop summary::-webkit-details-marker,
+.stat-pop summary::marker{
+    display:none;
+    content:"";
+}
+
+.stat-pop summary .stat-label::after{
+    content:" ▾";
+    color:var(--ink-3);
+}
+
+.stat-pop[open] summary .stat-label::after{
+    content:" ▴";
+}
+
+.kpi-detail{
+    position:absolute;
+    left:0;
+    right:0;
+    top:100%;
+    z-index:60;
+    margin-top:10px;
+    padding:14px 16px;
+    text-align:left;
+    background:var(--raised);
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius-sm);
+    box-shadow:0 18px 34px rgba(0,0,0,.55);
+    max-height:280px;
+    overflow-y:auto;
+}
+
+.kpi-detail-title{
+    margin:0 0 8px;
+    /* Sentence case: a tracked-out capitals label above every block is the
+       stock dashboard tell, and it is not more legible. */
+    font-size:var(--t-caption);
+    color:var(--ink-3);
+}
+
+.kpi-detail div{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    font-size:13px;
+    padding:6px 0;
+    border-top:1px solid rgba(255,255,255,.07);
+}
+
+.kpi-detail b{
+    font-weight:600;
+}
+
+/* The panel escapes the card, so its containers must not clip it. */
+.stat-pop[open]{
+    z-index:60;
+}
+
+[data-testid="stColumn"],
+[data-testid="stHorizontalBlock"],
+[data-testid="stVerticalBlock"]{
+    overflow:visible !important;
+}
+
+/* Hide the dataframe hover toolbar (download / search / fullscreen): it
+   floats over the first row on hover and offers an export the page
+   deliberately does not. */
+[data-testid="stElementToolbar"]{
+    display:none !important;
+}
+
+
+/* ============================= */
+/* COVERAGE STRIP                */
+/* ============================= */
+/* What the view contains, as one quiet line. Separated by hairlines rather
+   than by middle dots - the rule is structural, so it survives wrapping. */
+
+.strip{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0;
+    margin:var(--space-2) 0 0;
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    background:var(--panel);
+}
+
+.strip > div{
+    flex:1 1 150px;
+    padding:14px 20px;
+    border-left:1px solid var(--line);
+}
+
+.strip > div:first-child{
+    border-left:none;
+}
+
+.strip b{
+    display:block;
+    font-size:var(--t-lead);
+    font-weight:600;
+    line-height:1.2;
+    /* A long category name shrinks rather than pushing the row taller. */
+    overflow-wrap:anywhere;
+}
+
+.strip span{
+    color:var(--ink-3);
+    font-size:var(--t-caption);
+}
+
+
+/* ============================= */
+/* STRONGEST MARKETS             */
+/* ============================= */
+/* A leaderboard read down four short columns rather than across one long
+   table: the question is "who leads in my region", and a table sorted by
+   score makes that a search instead of a glance.
+
+   It reuses .section for its surface, so it reads as the same kind of thing
+   as the summary panel directly below it rather than as a third card style. */
+
+.leaders{
+    /* The rows carry their own rhythm; the panel's line-height would add a
+       second one on top of it. */
+    line-height:1.4;
+}
+
+.leaders-note{
+    margin:0 0 var(--space-2);
+    padding:0 0 var(--space-2);
+    border-bottom:1px solid var(--line);
+    color:var(--ink-2);
+    font-size:var(--t-caption);
+}
+
+/* auto-fit, so four regions sit in a row on a wide screen and collapse to
+   two, then one, without a breakpoint per layout. */
+.leader-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:var(--space-2);
+}
+
+.leader-region{
+    background:var(--raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    padding:14px 16px 8px;
+}
+
+.leader-region-title{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:var(--space-1);
+    margin:0 0 10px;
+    padding-bottom:9px;
+    border-bottom:1px solid var(--line);
+    font-size:var(--t-caption);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.09em;
+}
+
+.leader-region-title span{
+    color:var(--ink-3);
+    font-weight:400;
+    text-transform:none;
+    letter-spacing:0;
+}
+
+.leader-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:7px 0;
+    border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.leader-row:last-child{
+    border-bottom:none;
+}
+
+/* Fixed width, so the names start on one vertical line whether the rank is
+   one digit or two. */
+.leader-rank{
+    flex:none;
+    width:24px;
+    height:24px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    background:rgba(255,255,255,.07);
+    color:var(--ink-2);
+    font-size:11px;
+    font-weight:600;
+}
+
+/* The region's leader, filled; the two behind it tinted. Three steps down
+   from the top of each list, then nothing - a highlight on every rank would
+   highlight nothing. */
+.leader-rank-first{
+    background:var(--accent);
+    color:var(--ink);
+}
+
+.leader-rank-top{
+    background:var(--accent-deep);
+    color:var(--ink);
+}
+
+.leader-name{
+    flex:1;
+    min-width:0;
+    font-weight:600;
+    /* A long country name wraps rather than pushing the score off the row. */
+    overflow-wrap:anywhere;
+}
+
+.leader-name span{
+    display:block;
+    color:var(--ink-3);
+    font-size:var(--t-caption);
+    font-weight:400;
+}
+
+.leader-score{
+    flex:none;
+    text-align:right;
+    font-size:var(--t-lead);
+    font-weight:600;
+    letter-spacing:-.01em;
+}
+
+.leader-unit{
+    font-size:.68em;
+    font-weight:500;
+    color:var(--ink-2);
+    margin-left:1px;
+}
+
+.leader-obs{
+    display:block;
+    color:var(--ink-3);
+    font-size:11px;
+    font-weight:400;
+    letter-spacing:0;
+}
+
+
+/* ============================= */
+/* PANELS                        */
+/* ============================= */
+
+.section{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 24px;
+    margin:var(--space-2) 0 var(--space-3);
+    color:var(--ink);
+    font-size:var(--t-body);
+    line-height:1.55;
+}
+
+/* The list used to sit 60px in from the panel edge - the browser's default
+   40px on <ul> plus the panel's own padding - while its heading sat at 20. */
+.section ul{
+    margin:0;
+    padding-left:20px;
+}
+
+.section li{
+    margin:0 0 10px;
+}
+
+.section li:last-child{
+    margin-bottom:0;
+}
+
+.section p:first-child{
+    margin-top:0;
+}
+
+/* Active filters, as chips: what the numbers below are a view of. */
+.scope{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:0 0 var(--space-2);
+    padding:0 0 var(--space-2);
+    border-bottom:1px solid var(--line);
+}
+
+.chip{
+    display:inline-flex;
+    align-items:baseline;
+    gap:6px;
+    padding:5px 11px;
+    border-radius:999px;
+    background:var(--accent-deep);
+    border:1px solid rgba(47,128,237,.55);
+    font-size:var(--t-caption);
+}
+
+.chip b{
+    color:var(--ink-2);
+    font-weight:500;
+}
+
+.scope-empty{
+    color:var(--ink-3);
+    font-size:var(--t-caption);
+}
+
+/* Small heading over a chart that has no section heading of its own - the
+   paired top/bottom columns. Replaces the figure titles that used to sit at
+   a different indent from the section heading above them. */
+.chart-title{
+    font-size:var(--t-body);
+    font-weight:600;
+    margin:0 0 4px;
+}
+
+.chart-note{
+    color:var(--ink-3);
+    font-size:var(--t-caption);
+    margin:0 0 var(--space-1);
+}
+
+
+/* ============================= */
+/* FILTERS                       */
+/* ============================= */
+/* Streamlit paints these surfaces itself, so each one is pinned to the panel
+   colour explicitly - the dark theme's derived shades do not match it. */
+
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+[data-testid="stMultiSelect"] div[data-baseweb="select"] > div{
+    background:var(--panel) !important;
+    border:1px solid var(--line-strong) !important;
+    color:var(--ink) !important;
+    border-radius:var(--radius-sm) !important;
+    /* All six controls start the same height, so a row does not go ragged
+       the moment one of them holds a chip. */
+    min-height:42px;
+}
+
+/* Past a few selections the chips would push one control far taller than the
+   two beside it. They scroll inside the control instead. */
+[data-testid="stMultiSelect"] div[data-baseweb="select"] > div{
+    max-height:96px;
+    overflow-y:auto;
+}
+
+[data-testid="stSelectbox"] input,
+[data-testid="stMultiSelect"] input{
+    color:var(--ink) !important;
+}
+
+[data-testid="stMultiSelect"] label,
+[data-testid="stSelectbox"] label{
+    color:var(--ink-2) !important;
+    font-size:var(--t-caption) !important;
+    font-weight:500;
+}
+
+/* Selected values are chips, and the label inside one is a <span>. */
+span[data-baseweb="tag"]{
+    background:var(--accent-deep) !important;
+    border:1px solid var(--accent) !important;
+    border-radius:8px !important;
+}
+
+span[data-baseweb="tag"],
+span[data-baseweb="tag"] *{
+    color:var(--ink) !important;
+}
+
+span[data-baseweb="tag"] svg{
+    fill:var(--ink) !important;
+}
+
+/* The options menu renders in a portal at the end of <body>, outside .stApp,
+   so it cannot be scoped under the app container. */
+div[data-baseweb="popover"] ul[role="listbox"]{
+    background:var(--panel) !important;
+    border:1px solid var(--line-strong);
+}
+
+div[data-baseweb="popover"] li[role="option"],
+div[data-baseweb="popover"] li[role="option"] *{
+    color:var(--ink) !important;
+}
+
+div[data-baseweb="popover"] li[role="option"]:hover,
+div[data-baseweb="popover"] li[role="option"][aria-selected="true"]{
+    background:var(--accent-deep) !important;
+}
+
+/* The filter block reads as one control panel rather than six loose
+   dropdowns. */
+[data-testid="stVerticalBlockBorderWrapper"]:has(> div [data-testid="stMultiSelect"]){
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+}
+
+
+/* ============================= */
+/* TABLES & EXPANDERS            */
+/* ============================= */
+
+[data-testid="stExpander"] details{
+    background:var(--panel);
+    border:1px solid var(--line) !important;
+    border-radius:var(--radius-sm) !important;
+}
+
+[data-testid="stExpander"] summary{
+    font-size:var(--t-body);
+    color:var(--ink-2);
+}
+
+[data-testid="stDataFrame"]{
+    border-radius:var(--radius-sm);
+    overflow:hidden;
+}
+
+
+/* ============================= */
+/* BUTTONS                       */
+/* ============================= */
+/* Streamlit's default button background is white, and its label inherits the
+   page ink - white on white. Both are set here. */
+
+.stButton button,
+.stDownloadButton button,
+button[data-testid^="stBaseButton"]{
+    background:var(--accent-deep) !important;
+    border:1px solid var(--accent) !important;
+    border-radius:var(--radius-sm);
+    padding:8px 18px;
+    font-size:var(--t-body);
+    font-weight:600;
+    transition:background .18s ease,border-color .18s ease;
+}
+
+/* Streamlit wraps the label in its own markdown element, so colour the
+   button's descendants explicitly - the button rule alone will not reach it. */
+.stButton button,
+.stButton button *,
+.stDownloadButton button,
+.stDownloadButton button *,
+button[data-testid^="stBaseButton"],
+button[data-testid^="stBaseButton"] *{
+    color:var(--ink) !important;
+}
+
+.stButton button:hover,
+.stDownloadButton button:hover,
+button[data-testid^="stBaseButton"]:hover{
+    background:var(--accent) !important;
+    border-color:#56A0F5 !important;
+}
+
+.stButton button:active,
+.stButton button:focus,
+.stButton button:focus-visible,
+button[data-testid^="stBaseButton"]:focus{
+    background:var(--accent) !important;
+    border-color:#56A0F5 !important;
+    box-shadow:none !important;
+    outline:none !important;
+}
+
+/* Keyboard focus stays visible everywhere else. */
+:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+}
+
+@media (prefers-reduced-motion:reduce){
+    *{ transition:none !important; animation:none !important; }
+    .stat-pop:hover{ transform:none; }
+}
